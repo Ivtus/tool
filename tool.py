@@ -1,4 +1,6 @@
 import os
+import pandas as pd
+from openpyxl import load_workbook
 
 def get_file_names_without_extension(folder_path):
     """
@@ -48,17 +50,58 @@ def search_elements_in_files(folder_path, elements):
     return result
 
 
-source_folder_path = "D:\\download\\work\\物件収支\\SRD"
-destination_folder_path = "D:\\download\\work\\物件収支\\SRW"
-source_file_list = get_file_names_without_extension(source_folder_path)
+def export_to_excel(data, headers, output_path, sheet_name="Sheet1"):
+    """
+    将数据导出到 Excel 文件，如果文件存在则添加新工作表，如果文件不存在则创建新文件。
 
-matches = search_elements_in_files(destination_folder_path, source_file_list)
+    :param data: 数据列表
+    :param headers: 列标题列表
+    :param output_path: Excel 文件路径
+    :param sheet_name: 工作表名称
+    """
+    # 创建 DataFrame
+    df = pd.DataFrame(data, columns=headers)
 
-# 打印结果
-for element, files in matches.items():
-    if files:
-        print(f"'{element}' 在以下文件中找到: {files}")
+    if os.path.exists(output_path):
+        # 文件存在，加载现有的 Excel 文件
+        with pd.ExcelWriter(output_path, engine="openpyxl", mode="a") as writer:
+            # 打开现有的工作簿
+            book = load_workbook(output_path)
+
+            # 检查工作表是否已存在
+            if sheet_name in book.sheetnames:
+                print(f"工作表 '{sheet_name}' 已存在，正在添加数据到该工作表...")
+            else:
+                print(f"工作表 '{sheet_name}' 不存在，正在创建新工作表...")
+
+            # 将数据添加到新的工作表中
+            df.to_excel(writer, index=False, sheet_name=sheet_name)
+            print(f"数据已成功保存到现有文件 {output_path}，工作表 '{sheet_name}'")
+
     else:
-        print(f"'{element}' 未在任何文件中找到。")
+        # 文件不存在，直接创建并保存
+        with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False, sheet_name=sheet_name)
+            print(f"新文件已创建并保存到 {output_path}，工作表 '{sheet_name}'")
 
 
+if __name__=="__main__":
+
+    source_folder_path = r"D:\download\work\SP"
+    destination_folder_path = r"D:\download\work\物件収支\SRU"
+    source_file_list = get_file_names_without_extension(source_folder_path)
+
+    matches = search_elements_in_files(destination_folder_path, source_file_list)
+
+    paris_list = []
+    source_extension = os.path.basename(source_folder_path)
+    destination_extension = os.path.basename(destination_folder_path)
+    headers = [destination_extension,source_extension,]
+    sheet_name = destination_extension + "→" + source_extension
+    #将ID名存入list中
+    for element, files in matches.items():
+        if files:
+         file_name = os.path.splitext(os.path.basename(files[0]))[0]
+         paris_list.append([file_name,element])
+
+    export_to_excel(paris_list,headers,r"D:\download\work\物件収支\物件収支_output.xlsx",sheet_name)
