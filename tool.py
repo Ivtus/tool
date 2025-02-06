@@ -34,7 +34,6 @@ def search_elements_in_files(folder_path, elements):
     for root, _, files in os.walk(folder_path):
         for file_name in files:
             file_path = os.path.join(root, file_name)
-
             # ファイル内容を読み取る
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
